@@ -1,17 +1,14 @@
 import path from 'path';
 import pug from 'pug';
 import nodemailer from 'nodemailer';
-import { Queue } from 'bullmq';
 import { SentMessageInfo } from 'nodemailer/lib/smtp-transport';
 import { Inject, Injectable } from '@nestjs/common';
 import { ConfigType } from '@nestjs/config';
-import { InjectQueue } from '@nestjs/bullmq';
 import {
   appConfigFactory,
   mailConfigFactory,
   mailQueueConfigFactory,
 } from '@Config';
-import { MAIL_QUEUE } from './mail.constants';
 import { MailTemplate } from './mail.types';
 
 export type SendMessagePayload = {
@@ -33,8 +30,6 @@ export class MailService {
     private readonly appConfig: ConfigType<typeof appConfigFactory>,
     @Inject(mailQueueConfigFactory.KEY)
     private readonly queueConfig: ConfigType<typeof mailQueueConfigFactory>,
-    @InjectQueue(MAIL_QUEUE)
-    private readonly mailQueue: Queue<SendMessagePayload, SentMessageInfo>,
   ) {
     this.transporter = nodemailer.createTransport({
       name: this.appConfig.domain,
@@ -77,6 +72,6 @@ export class MailService {
   }
 
   async send(mailPayload: SendMessagePayload): Promise<void> {
-    await this.mailQueue.add('send', mailPayload, this.queueConfig.options);
+    // await this.mailQueue.add('send', mailPayload, this.queueConfig.options);
   }
 }

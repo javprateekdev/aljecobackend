@@ -20,8 +20,6 @@ export class EnvironmentVariables {
   @IsString()
   DATABASE_URL: string;
 
-  @IsString()
-  REDIS_URI: string;
 
   @IsString()
   STORAGE_DIR: string;

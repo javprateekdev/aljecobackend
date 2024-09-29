@@ -9,7 +9,6 @@ import { AppController } from './app.controller';
 import { AppCacheInterceptor } from './app-cache.interceptor';
 import { PrismaModule } from './prisma';
 import { AuthModule } from './auth';
-import { RedisModule } from './redis';
 import { MasterAccountModule } from './master-account/master-account.module';
 import { TransactionModule } from './transaction/transaction.module';
 import {CategoryModule} from './category/category.module';
@@ -28,7 +27,6 @@ import {ProductModule} from './product/product.module';
     ScheduleModule.forRoot(),
     CommonModule,
     PrismaModule,
-    RedisModule,
     AuthModule,
     MasterAccountModule,
     TransactionModule,
