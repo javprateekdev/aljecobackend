@@ -17,7 +17,7 @@ RUN npm install
 
 COPY . .
 
-EXPOSE 9001
+EXPOSE 8080
 
 # development image
 FROM base AS nestjs-app-dev
