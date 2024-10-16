@@ -1,0 +1,513 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+enum AdminStatus {
+  Active @map("active")
+
+  @@map("admin_status")
+}
+
+model Admin {
+  id           Int         @id @default(autoincrement())
+  firstname    String
+  lastname     String
+  email        String      @unique
+  profileImage String?     @map("profile_image")
+  status       AdminStatus @default(Active)
+  createdAt    DateTime    @default(now()) @map("created_at")
+  updatedAt    DateTime    @updatedAt @map("updated_at")
+  meta         AdminMeta?
+
+  @@map("admin")
+}
+
+model AdminMeta {
+  passwordSalt String? @map("password_salt")
+  passwordHash String? @map("password_hash")
+  admin        Admin   @relation(fields: [adminId], references: [id])
+  adminId      Int     @unique() @map("admin_id")
+
+  @@map("admin_meta")
+}
+
+enum UserStatus {
+  Active  @map("active")
+  Blocked @map("blocked")
+
+  @@map("user_status")
+}
+
+enum ProductStatus {
+  Active  @map("active")
+  Blocked @map("blocked")
+
+  @@map("product_status")
+}
+
+model User {
+  id             Int             @id @default(autoincrement())
+  firstname      String
+  lastname       String
+  username       String?         @unique
+  email          String          @unique
+  dialCode       String?         @map("dial_code")
+  mobile         String?         @unique
+  profileImage   String?         @map("profile_image")
+  isVerified     Boolean         @default(false) @map("is_verified")
+  country        String?
+  status         UserStatus      @default(Active)
+  createdAt      DateTime        @default(now()) @map("created_at")
+  updatedAt      DateTime        @updatedAt @map("updated_at")
+  meta           UserMeta?
+  Wishlist       Wishlist[]
+  Payment        Payment[]
+  Cart           Cart[]
+  settings       UserSetting[]
+  masterAccounts MasterAccount[] @relation("UserToMaster")
+  // Receipt       Receipt[]
+  // Voucher       Voucher[]
+  // MasterAccount  MasterAccount[]
+  CartItem       CartItem[]
+  Order          Order[]
+
+  @@map("user")
+}
+
+model UserMeta {
+  googleId     String? @unique @map("google_id")
+  passwordSalt String? @map("password_salt")
+  passwordHash String? @map("password_hash")
+  user         User    @relation(fields: [userId], references: [id])
+  userId       Int     @unique() @map("user_id")
+
+  @@map("user_meta")
+}
+
+enum OtpTransport {
+  Email  @map("email")
+  Mobile @map("mobile")
+
+  @@map("otp_transport")
+}
+
+model Otp {
+  code             String
+  attempt          Int          @default(1) @db.SmallInt
+  lastSentAt       DateTime     @default(now()) @map("last_sent_at")
+  retries          Int          @default(0) @db.SmallInt
+  transport        OtpTransport
+  target           String
+  lastCodeVerified Boolean      @default(false) @map("last_code_verified")
+  blocked          Boolean      @default(false)
+
+  @@unique([transport, target])
+  @@map("otp")
+}
+
+enum SettingType {
+  Binary       @map("binary")
+  MultiSelect  @map("multi_select")
+  SingleSelect @map("single_select")
+
+  @@map("setting_type")
+}
+
+enum SettingContext {
+  User   @map("user")
+  System @map("System")
+
+  @@map("setting_context")
+}
+
+model Setting {
+  id               Int             @id @default(autoincrement())
+  mappedTo         String          @map("mapped_to")
+  text             String          @default("")
+  description      String          @default("")
+  type             SettingType
+  context          SettingContext
+  default          Json
+  isDefinedOptions Boolean         @map("is_defined_options")
+  subSettings      Setting[]       @relation("SubSettings")
+  dependsOn        Setting?        @relation("SubSettings", fields: [parentId], references: [id])
+  parentId         Int?            @map("parent_id")
+  options          SettingOption[]
+  userSettings     UserSetting[]
+  systemSettings   SystemSetting[]
+
+  @@unique([context, mappedTo])
+  @@map("setting")
+}
+
+model SettingOption {
+  id        Int     @id @default(autoincrement())
+  text      String  @default("")
+  value     String
+  setting   Setting @relation(fields: [settingId], references: [id])
+  settingId Int     @map("setting_id")
+
+  @@unique([settingId, value])
+  @@map("setting_option")
+}
+
+model UserSetting {
+  selection Json
+  user      User    @relation(fields: [userId], references: [id])
+  userId    Int     @map("user_id")
+  setting   Setting @relation(fields: [settingId], references: [id])
+  settingId Int     @map("setting_id")
+
+  @@id([userId, settingId])
+  @@map("user_setting")
+}
+
+model SystemSetting {
+  selection Json
+  setting   Setting @relation(fields: [settingId], references: [id])
+  settingId Int     @map("setting_id")
+
+  @@id([settingId])
+  @@map("system_setting")
+}
+
+model MasterAccount {
+  id                Int           @id @default(autoincrement())
+  accountHolderName String
+  createdAt         DateTime?     @default(now()) @map("created_at")
+  updatedAt         DateTime?     @updatedAt @map("updated_at")
+  subAccounts       SubAccount[]  @relation("MasterToSub")
+  transactions      Transaction[] @relation("MasterToTransaction")
+  // userId            Int?          @map("user_id")
+  // user              User?         @relation(fields: [userId], references: [id])
+
+  User User[] @relation("UserToMaster")
+}
+
+model SubAccount {
+  id              Int           @id @default(autoincrement())
+  masterAccountId Int
+  bankName        String
+  createdAt       DateTime?     @default(now()) @map("created_at")
+  updatedAt       DateTime?     @updatedAt @map("updated_at")
+  masterAccount   MasterAccount @relation(fields: [masterAccountId], references: [id], name: "MasterToSub")
+  transactions    Transaction[] @relation("SubToTransaction")
+}
+
+model Receipt {
+  id           Int           @id @default(autoincrement())
+  amount       Decimal
+  description  String
+  isAssigned   Boolean       @default(false)
+  date         DateTime      @db.Date
+  transactions Transaction[] @relation("ReceiptToTransaction")
+  createdAt    DateTime      @default(now()) @map("created_at")
+  updatedAt    DateTime      @updatedAt @map("updated_at")
+  Voucher      Voucher[]
+
+  @@map("receipt")
+}
+
+model Voucher {
+  id           Int           @id @default(autoincrement())
+  amount       Decimal
+  description  String
+  date         DateTime      @db.Date
+  transactions Transaction[] @relation("VoucherToTransaction")
+  createdAt    DateTime      @default(now()) @map("created_at")
+  updatedAt    DateTime      @default(now()) @map("updated_at")
+  receipt      Receipt?      @relation(fields: [receiptId], references: [id])
+  receiptId    Int?          @map("receipt_id")
+
+  // user         User          @relation(fields: [userId], references: [id])
+  @@map("voucher")
+}
+
+model Transaction {
+  id              Int            @id @default(autoincrement())
+  amount          Decimal
+  receiptId       Int?
+  voucherId       Int?
+  subAccountId    Int?
+  adat            Float?
+  commission      Float?
+  entryType       EntryType
+  entryId         Int?
+  referenceId     String?
+  masterAccountId Int?
+  receipt         Receipt?       @relation(fields: [receiptId], references: [id], name: "ReceiptToTransaction")
+  voucher         Voucher?       @relation(fields: [voucherId], references: [id], name: "VoucherToTransaction")
+  subAccount      SubAccount?    @relation(fields: [subAccountId], references: [id], name: "SubToTransaction")
+  masterAccount   MasterAccount? @relation(fields: [masterAccountId], references: [id], name: "MasterToTransaction")
+}
+
+enum EntryType {
+  DEBIT
+  CREDIT
+}
+
+enum RoleType {
+  USER
+  ADMIN
+}
+
+model ProductGender {
+  genderId   Int               @id @default(autoincrement())
+  genderName String            @map("gender_name")
+  categories ProductCategory[] @relation("GenderCategories")
+}
+
+model ProductCategory {
+  productCategoryId Int             @id @default(autoincrement())
+  fieldName         String          @map("field_name")
+  fieldImage        String?         @map("field_image")
+  productGender     ProductGender[] @relation("GenderCategories")
+  products          Product[]       @relation("CategoryProducts")
+  categoryId        Int?            @map("category_id")
+  category          Category?       @relation(fields: [categoryId], references: [categoryId])
+  createdAt         DateTime        @default(now()) @map("created_at")
+  updatedAt         DateTime        @updatedAt @map("updated_at")
+}
+
+model Product {
+  productId          Int              @id @default(autoincrement())
+  productName        String           @map("product_name")
+  productCategoryId  Int?             @map("category_id")
+  productDescription String?          @map("product_description")
+  brandName          String?          @map("brand_name")
+  tagName            String?          @map("tag_name")
+  status             ProductStatus    @default(Active)
+  productCategory    ProductCategory? @relation("CategoryProducts", fields: [productCategoryId], references: [productCategoryId])
+  productItems       ProductItem[]
+  sizeOptions        SizeOption[]     @relation("ProductSizeOptions")
+  createdAt          DateTime         @default(now()) @map("created_at")
+  updatedAt          DateTime         @updatedAt @map("updated_at")
+
+  @@map("products")
+}
+
+model Category {
+  categoryId      Int               @id @default(autoincrement()) @map("category_id")
+  categoryName    String            @map("category_name")
+  ProductCategory ProductCategory[]
+  createdAt       DateTime          @default(now()) @map("created_at")
+  updatedAt       DateTime          @updatedAt @map("updated_at")
+}
+
+model SizeOption {
+  optionId        Int               @id @default(autoincrement())
+  sizeName        String?           @map("size_name")
+  sortOrder       Int?              @map("size_order")
+  productVaration ProductVaration[]
+  productId       Int?              @map("product_id")
+  product         Product?          @relation("ProductSizeOptions", fields: [productId], references: [productId])
+}
+
+model ProductVaration {
+  variationId   Int          @id @default(autoincrement())
+  productItem   ProductItem? @relation(fields: [itemId], references: [itemId])
+  itemId        Int?         @map("item_id")
+  sizeOption    SizeOption?  @relation(fields: [optionId], references: [optionId])
+  optionId      Int?         @map("option_id")
+  quantityStock Int          @map("quantity_stock")
+  createdAt     DateTime     @default(now()) @map("created_at")
+  updatedAt     DateTime     @updatedAt @map("updated_at")
+}
+
+model Colour {
+  colourId     Int           @id @default(autoincrement())
+  colourName   String?       @map("colour_name")
+  productItems ProductItem[]
+}
+
+model Style {
+  styleId     Int           @id @default(autoincrement())
+  name        String?
+  ProductItem ProductItem[]
+}
+
+model NeckLine {
+  neckLineId  Int           @id @default(autoincrement())
+  name        String?
+  ProductItem ProductItem[]
+}
+
+model SleeveLength {
+  sleeveId    Int           @id @default(autoincrement())
+  name        String?
+  ProductItem ProductItem[]
+}
+
+model Season {
+  seasonId    Int           @id @default(autoincrement())
+  name        String?
+  ProductItem ProductItem[]
+}
+
+model Length {
+  lengthId    Int           @id @default(autoincrement())
+  name        String?
+  ProductItem ProductItem[]
+}
+
+model BodyFit {
+  bodyId      Int           @id @default(autoincrement())
+  name        String?
+  ProductItem ProductItem[]
+}
+
+model DressType {
+  dressId     Int           @id @default(autoincrement())
+  name        String?
+  ProductItem ProductItem[]
+}
+
+model ProductItem {
+  itemId          Int               @id @default(autoincrement())
+  originalPrice   Int               @map("original_price")
+  salePrice       Int?              @map("sale_price")
+  productCode     Int               @map("product_code")
+  productId       Int?              @map("product_id")
+  product         Product?          @relation(fields: [productId], references: [productId])
+  colourId        Int?              @map("colour_id")
+  colour          Colour?           @relation(fields: [colourId], references: [colourId])
+  productVaration ProductVaration[]
+  styleId         Int?              @map("style_id")
+  style           Style?            @relation(fields: [styleId], references: [styleId])
+  neckLineId      Int?              @map("neck_line_id")
+  neckLine        NeckLine?         @relation(fields: [neckLineId], references: [neckLineId])
+  sleeveId        Int?              @map("sleeve_id")
+  sleeveLength    SleeveLength?     @relation(fields: [sleeveId], references: [sleeveId])
+  seasonId        Int?              @map("season_id")
+  season          Season?           @relation(fields: [seasonId], references: [seasonId])
+  lengthId        Int?              @map("length_id")
+  length          Length?           @relation(fields: [lengthId], references: [lengthId])
+  bodyId          Int?              @map("body_id")
+  bodyFit         BodyFit?          @relation(fields: [bodyId], references: [bodyId])
+  dressId         Int?              @map("dress_id")
+  dressType       DressType?        @relation(fields: [dressId], references: [dressId])
+  images          Image[]
+  CartItem        CartItem[]
+  WishlistItem    WishlistItem[]
+
+  OrderItem OrderItem[]
+}
+
+model Image {
+  imageId       Int         @id @default(autoincrement())
+  url           String      @map("image_url") // Image URL
+  productItemId Int         @map("product_item_id")
+  productItem   ProductItem @relation(fields: [productItemId], references: [itemId])
+}
+
+model Cart {
+  id        Int        @id @default(autoincrement())
+  userId    Int         @unique()
+  user      User       @relation(fields: [userId], references: [id])
+  cartItems CartItem[]
+  createdAt DateTime   @default(now()) @map("created_at")
+  updatedAt DateTime   @updatedAt @map("updated_at")
+
+  @@map("cart")
+}
+
+model CartItem {
+  id            Int         @id @default(autoincrement())
+  cartId        Int
+  userId        Int
+  user          User        @relation(fields: [userId], references: [id])
+  productItemId Int
+  quantity      Int         @default(1)
+  cart          Cart        @relation(fields: [cartId], references: [id])
+  productItem   ProductItem @relation(fields: [productItemId], references: [itemId])
+  priceAtTime   Decimal     @map("price_at_time")
+  createdAt     DateTime    @default(now()) @map("created_at")
+  updatedAt     DateTime    @updatedAt @map("updated_at")
+
+  @@map("cart_item")
+}
+
+model Wishlist {
+  id            Int            @id @default(autoincrement())
+  userId        Int
+  user          User           @relation(fields: [userId], references: [id])
+  wishlistItems WishlistItem[]
+  createdAt     DateTime       @default(now()) @map("created_at")
+  updatedAt     DateTime       @updatedAt @map("updated_at")
+
+  @@map("wishlist")
+}
+
+model WishlistItem {
+  id            Int         @id @default(autoincrement())
+  wishlistId    Int
+  productItemId Int
+  wishlist      Wishlist    @relation(fields: [wishlistId], references: [id])
+  productItem   ProductItem @relation(fields: [productItemId], references: [itemId])
+  priceAtTime   Decimal     @map("price_at_time")
+  createdAt     DateTime    @default(now()) @map("created_at")
+  updatedAt     DateTime    @updatedAt @map("updated_at")
+
+  @@map("wishlist_item")
+}
+
+enum OrderStatus {
+  PENDING // Order is created but not yet confirmed
+  PROCESSING // Payment is verified, and the order is being processed
+  SHIPPED // Order is shipped but not delivered yet
+  DELIVERED // Order is delivered to the customer
+  CANCELED // Order is canceled by the customer or the system
+  FAILED // Payment failed, order is not completed
+  REFUNDED // Order has been refunded after a successful return or issue
+}
+
+model Order {
+  id              Int         @id @default(autoincrement())
+  userId          Int
+  user            User        @relation(fields: [userId], references: [id])
+  orderItems      OrderItem[] // Related items in the order
+  totalPrice      Decimal
+  status          OrderStatus @default(PENDING) // Use enum for status
+  razorpayOrderId String // Razorpay order ID to track payment
+  createdAt       DateTime    @default(now()) @map("created_at")
+  updatedAt       DateTime    @updatedAt @map("updated_at")
+  Payment         Payment[]
+
+  @@map("orders")
+}
+
+model OrderItem {
+  id            Int         @id @default(autoincrement())
+  orderId       Int
+  order         Order       @relation(fields: [orderId], references: [id])
+  productItemId Int
+  productItem   ProductItem @relation(fields: [productItemId], references: [itemId])
+  quantity      Int         @default(1)
+  priceAtTime   Decimal     @map("price_at_time")
+  createdAt     DateTime    @default(now()) @map("created_at")
+
+  @@map("order_item")
+}
+
+model Payment {
+  id            Int      @id @default(autoincrement())
+  orderId       Int
+  order         Order    @relation(fields: [orderId], references: [id])
+  userId        Int
+  user          User     @relation(fields: [userId], references: [id])
+  amount        Decimal
+  paymentMethod String
+  transactionId String?
+  status        String   @default("PENDING")
+  createdAt     DateTime @default(now()) @map("created_at")
+
+  @@map("payment")
+}
