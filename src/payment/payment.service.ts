@@ -20,7 +20,8 @@ export class PaymentService {
     amount: number,
     receipt: string,
     userId: number,
-    couponCode: string | null, // Allow null if no coupon is provided
+    couponCode: string | null,
+    addressId: number, // Allow null if no coupon is provided
   ) {
     try {
       // Retrieve the cart to calculate the expected amount
@@ -93,6 +94,7 @@ export class PaymentService {
           couponId: coupon ? coupon.id : null, // Save the coupon used (if any)
           status: 'PENDING', // or OrderStatus.PENDING if using the enum
           razorpayOrderId: razorpayOrder.id,
+          deleiveryAddressID: addressId,
         },
       });
 

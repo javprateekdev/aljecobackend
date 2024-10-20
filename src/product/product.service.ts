@@ -103,14 +103,11 @@ export class ProductService {
 
     const productItemFilters: Prisma.ProductItemWhereInput = {};
 
-    console.log();
-    console.log('product', productItemFilters);
 
     // Adjusting filter checks to handle arrays of IDs
     if (options?.filters?.dressType) {
       productItemFilters.dressId = { in: options.filters.dressType }; // Use 'in' for arrays
     }
-    console.log('array', options?.filters?.dressType);
     if (options?.filters?.length) {
       productItemFilters.lengthId = { in: options.filters.length }; // Use 'in' for arrays
     }

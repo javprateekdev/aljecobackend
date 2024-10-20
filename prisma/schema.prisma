@@ -98,6 +98,7 @@ model Address {
   updatedAt    DateTime @updatedAt @map("updated_at")
 
   @@map("address")
+  Order Order[]
 }
 
 model UserMeta {
@@ -499,7 +500,9 @@ model Order {
   updatedAt       DateTime    @updatedAt @map("updated_at")
   Payment         Payment[]
   couponId        Int? // Optional: Foreign key for the Coupon
-  coupon          Coupon?     @relation(fields: [couponId], references: [id]) // Relation to Coupon
+  coupon          Coupon?     @relation(fields: [couponId], references: [id]) 
+  deleiveryAddress Address   @relation(fields:[ deleiveryAddressID],references: [id])
+  deleiveryAddressID Int
 
   @@map("orders")
 }

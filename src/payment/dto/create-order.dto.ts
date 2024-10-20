@@ -18,6 +18,14 @@ export class CreateOrderDto {
   amount: number;
 
   @ApiProperty({
+    description: 'AddressId',
+    example: 500,
+  })
+  @IsNumber()
+  @IsNotEmpty()
+  addressId: number;
+
+  @ApiProperty({
     description: 'Unique identifier for the receipt',
     example: 'receipt#1',
   })

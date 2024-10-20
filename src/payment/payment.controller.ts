@@ -58,6 +58,7 @@ export class PaymentController {
       order.receipt,
       user.id,
       order.coupon || null,
+      order.addressId,
     );
     if (!razorpayOrder) {
       return null;
@@ -85,24 +86,6 @@ export class PaymentController {
     return {
       message: 'Payment verified successfully',
     };
-  }
-
-  @Post('create')
-  async createCoupon(@Body() createCouponDto: CreateCouponDto) {
-    const expiration = createCouponDto.expiration
-      ? new Date(createCouponDto.expiration)
-      : null;
-
-    return this.prisma.coupon.create({
-      data: {
-        code: createCouponDto.code,
-        discount: createCouponDto.discount,
-        description: createCouponDto.description,
-        type: createCouponDto.type,
-        expiration,
-        usageLimit: createCouponDto.usageLimit,
-      },
-    });
   }
 
   @Post('check')
@@ -158,5 +141,23 @@ export class PaymentController {
       discountValue: coupon.discount,
       message: message,
     };
+  }
+  @Roles(UserType.Admin)
+  @Post('create')
+  async createCoupon(@Body() createCouponDto: CreateCouponDto) {
+    const expiration = createCouponDto.expiration
+      ? new Date(createCouponDto.expiration)
+      : null;
+
+    return this.prisma.coupon.create({
+      data: {
+        code: createCouponDto.code,
+        discount: createCouponDto.discount,
+        description: createCouponDto.description,
+        type: createCouponDto.type,
+        expiration,
+        usageLimit: createCouponDto.usageLimit,
+      },
+    });
   }
 }
