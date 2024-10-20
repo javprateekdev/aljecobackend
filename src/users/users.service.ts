@@ -1,7 +1,7 @@
 /* eslint-disable prettier/prettier */
 import { join } from 'path';
 import { Cache } from 'cache-manager';
-import { Inject, Injectable } from '@nestjs/common';
+import { Inject, Injectable, NotFoundException } from '@nestjs/common';
 import { ConfigType } from '@nestjs/config';
 import { CACHE_MANAGER } from '@nestjs/cache-manager';
 import {
@@ -26,6 +26,7 @@ import {
   SendCodeResponse,
   VerifyCodeResponse,
 } from '../otp';
+import { CreateAddressDto, UpdateAddressDto } from './dto';
 
 @Injectable()
 export class UsersService {
@@ -605,5 +606,78 @@ export class UsersService {
       take: pagination.take,
       data: response,
     };
+  }
+
+  async addAddress(userId: number, createAddressDto: CreateAddressDto) {
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+    });
+  
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+  
+    return this.prisma.$transaction(async (prisma) => {
+      const address = await prisma.address.create({
+        data: {
+          ...createAddressDto,  // Spread the DTO to insert address fields
+          userId: userId,  // Directly set the userId foreign key
+        },
+      });
+  
+      return address;
+    });
+  }
+
+  async getAddresses(userId: number) {
+    const user = await this.prisma.user.findMany({
+      where: { id: userId },
+      include: { Address: true },
+    });
+
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+
+    return user;
+  }
+
+  async getAddressById(userId: number, addressId: number) {
+    const address = await this.prisma.address.findFirst({
+      where: { id: addressId, userId },
+    });
+
+    if (!address) {
+      throw new NotFoundException('Address not found');
+    }
+
+    return address;
+  }
+
+  async updateAddress(
+    userId: number,
+    addressId: number,
+    updateAddressDto: UpdateAddressDto,
+  ) {
+    const address = await this.getAddressById(userId, addressId);
+    if (!address) {
+      throw new NotFoundException('Address not found');
+    }
+
+    return this.prisma.address.update({
+      where: { id: addressId },
+      data: updateAddressDto,
+    });
+  }
+
+  async deleteAddress(userId: number, addressId: number) {
+    const address = await this.getAddressById(userId, addressId);
+    if (!address) {
+      throw new NotFoundException('Address not found');
+    }
+
+    return this.prisma.address.delete({
+      where: { id: addressId },
+    });
   }
 }

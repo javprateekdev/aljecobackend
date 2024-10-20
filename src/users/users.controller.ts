@@ -5,6 +5,7 @@ import {
   Delete,
   Get,
   Param,
+  Put,
   ParseEnumPipe,
   ParseIntPipe,
   Patch,
@@ -31,6 +32,8 @@ import {
   UpdateProfileDetailsRequestDto,
   UpdateProfileImageRequestDto,
   UpdateUserProfileRequestDto,
+  CreateAddressDto,
+  UpdateAddressDto,
 } from './dto';
 
 @ApiTags('User')
@@ -40,6 +43,38 @@ import {
 export class UsersController extends BaseController {
   constructor(private readonly usersService: UsersService) {
     super();
+  }
+
+  @Roles(UserType.User)
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Post(':userId/address')
+  createAddress(
+    @Param('userId', ParseIntPipe) userId: number,
+    @Body() createAddressDto: CreateAddressDto,
+  ) {
+    return this.usersService.addAddress(userId, createAddressDto);
+  }
+
+  @Get('addresses/:userId')
+  findAllAddresses(@Param('userId', ParseIntPipe) userId: number) {
+    return this.usersService.getAddresses(userId);
+  }
+
+  @Put(':id')
+  updateAddress(
+    @Param('userId', ParseIntPipe) userId: number,
+    @Param('id', ParseIntPipe) id: number,
+    @Body() updateAddressDto: UpdateAddressDto,
+  ) {
+    return this.usersService.updateAddress(userId, id, updateAddressDto);
+  }
+
+  @Delete(':id')
+  removeAddress(
+    @Param('userId', ParseIntPipe) userId: number,
+    @Param('id', ParseIntPipe) id: number,
+  ) {
+    return this.usersService.deleteAddress(userId, id);
   }
 
   @Roles(UserType.Admin)
@@ -142,5 +177,4 @@ export class UsersController extends BaseController {
     await this.usersService.setStatus(userId, status);
     return { status: 'success' };
   }
-
 }

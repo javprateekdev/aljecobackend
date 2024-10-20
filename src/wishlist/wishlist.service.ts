@@ -50,7 +50,6 @@ export class WishlistService {
     productItemId: number;
     priceAtTime: number;
   }) {
-    console.log('wishlistId', data.wishlistId);
     return this.prismaService.wishlistItem.create({
       data,
     });

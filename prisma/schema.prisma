@@ -78,8 +78,26 @@ model User {
   // MasterAccount  MasterAccount[]
   CartItem       CartItem[]
   Order          Order[]
+  Address        Address[]
 
   @@map("user")
+}
+
+model Address {
+  id           Int      @id @default(autoincrement())
+  userId       Int      @map("user_id")
+  user         User     @relation(fields: [userId], references: [id])
+  addressLine1 String   @map("address_line1") // Street address or PO Box
+  addressLine2 String?  @map("address_line2") // Optional second line for address
+  city         String
+  state        String
+  postalCode   String   @map("postal_code")
+  country      String
+  isDefault    Boolean  @default(false) // Whether it's the default address for the user
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  @@map("address")
 }
 
 model UserMeta {
@@ -410,7 +428,7 @@ model Image {
 
 model Cart {
   id        Int        @id @default(autoincrement())
-  userId    Int         @unique()
+  userId    Int        @unique()
   user      User       @relation(fields: [userId], references: [id])
   cartItems CartItem[]
   createdAt DateTime   @default(now()) @map("created_at")
@@ -480,6 +498,8 @@ model Order {
   createdAt       DateTime    @default(now()) @map("created_at")
   updatedAt       DateTime    @updatedAt @map("updated_at")
   Payment         Payment[]
+  couponId        Int? // Optional: Foreign key for the Coupon
+  coupon          Coupon?     @relation(fields: [couponId], references: [id]) // Relation to Coupon
 
   @@map("orders")
 }
@@ -510,4 +530,59 @@ model Payment {
   createdAt     DateTime @default(now()) @map("created_at")
 
   @@map("payment")
+}
+
+model Slide {
+  id          Int          @id @default(autoincrement())
+  title       String
+  targetUrl   String       @map("target_url")
+  description String?
+  position    Int          @default(0)
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+  images      SlideImage[]
+
+  @@map("slide")
+}
+
+model SlideImage {
+  id        Int      @id @default(autoincrement())
+  imageUrl  String   @map("image_url")
+  slideId   Int
+  slide     Slide    @relation(fields: [slideId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  @@map("slide_image")
+}
+
+model SectionImage {
+  id          Int      @id @default(autoincrement())
+  imageUrl    String   @map("image_url")
+  targetUrl   String   @map("target_url")
+  description String?
+  position    Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("section_image")
+}
+
+model Coupon {
+  id          Int          @id @default(autoincrement())
+  code        String       @unique
+  discount    Float // Discount value (percentage or fixed amount)
+  description String
+  type        DiscountType // Enum to specify discount type (e.g., percentage, fixed)
+  expiration  DateTime? // Expiration date for the coupon
+  usageLimit  Int? // Maximum number of times the coupon can be used
+  createdAt   DateTime     @default(now()) @map("created_at")
+  updatedAt   DateTime     @updatedAt @map("updated_at")
+  Order       Order[]
+
+  @@map("coupon")
+}
+
+enum DiscountType {
+  PERCENTAGE
+  FIXED
 }
