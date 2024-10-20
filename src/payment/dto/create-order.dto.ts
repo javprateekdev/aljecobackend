@@ -3,6 +3,13 @@ import { ApiProperty } from '@nestjs/swagger';
 
 export class CreateOrderDto {
   @ApiProperty({
+    description: 'Coupon Code',
+    example: 500,
+  })
+  @IsString()
+  coupon?: string;
+
+  @ApiProperty({
     description: 'Amount for the order in INR',
     example: 500,
   })

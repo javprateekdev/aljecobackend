@@ -612,19 +612,19 @@ export class UsersService {
     const user = await this.prisma.user.findUnique({
       where: { id: userId },
     });
-  
+
     if (!user) {
       throw new NotFoundException('User not found');
     }
-  
+
     return this.prisma.$transaction(async (prisma) => {
       const address = await prisma.address.create({
         data: {
-          ...createAddressDto,  // Spread the DTO to insert address fields
-          userId: userId,  // Directly set the userId foreign key
+          ...createAddressDto, // Spread the DTO to insert address fields
+          userId: userId, // Directly set the userId foreign key
         },
       });
-  
+
       return address;
     });
   }
@@ -679,5 +679,14 @@ export class UsersService {
     return this.prisma.address.delete({
       where: { id: addressId },
     });
+  }
+
+  async findAllOrders(id: number) {
+    const orders = await this.prisma.order.findMany({
+      where: {
+        userId: id,
+      },
+    });
+    return orders;
   }
 }

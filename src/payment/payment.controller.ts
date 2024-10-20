@@ -57,6 +57,7 @@ export class PaymentController {
       order.amount,
       order.receipt,
       user.id,
+      order.coupon || null,
     );
     if (!razorpayOrder) {
       return null;
@@ -64,9 +65,10 @@ export class PaymentController {
 
     return {
       message: 'Order created successfully',
-      razorpayOrderId: razorpayOrder.id,
+      razorpayOrderId: razorpayOrder.razorpayOrder.id,
       amount: order.amount,
       currency: 'INR',
+      order: razorpayOrder.order.id,
     };
   }
 

@@ -1,7 +1,15 @@
-import { IsNotEmpty, IsString } from 'class-validator';
+import { IsInt, IsNotEmpty, IsString } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 
 export class VerifyPaymentDto {
+  @ApiProperty({
+    description: 'DB_Order_ID',
+    example: 1,
+  })
+  @IsInt()
+  @IsNotEmpty()
+  id: number;
+
   @ApiProperty({
     description: 'Razorpay Order ID',
     example: 'order_FfVXTjwiEVyf4P',

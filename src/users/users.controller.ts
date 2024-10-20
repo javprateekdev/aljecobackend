@@ -60,6 +60,12 @@ export class UsersController extends BaseController {
     return this.usersService.getAddresses(userId);
   }
 
+  @Get('orders')
+  findAllOrders(@Req() req: AuthenticatedRequest) {
+    const ctx = this.getContext(req);
+    return this.usersService.findAllOrders(ctx.user.id);
+  }
+
   @Put(':id')
   updateAddress(
     @Param('userId', ParseIntPipe) userId: number,
