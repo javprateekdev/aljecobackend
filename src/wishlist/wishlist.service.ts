@@ -7,7 +7,8 @@ export class WishlistService {
 
   // Find wishlist by user ID
   async findWishlistByUserId(userId: number) {
-    return this.prismaService.wishlist.findFirst({
+    // Attempt to find the wishlist for the given userId
+    let wishlist = await this.prismaService.wishlist.findFirst({
       where: { userId },
       include: {
         wishlistItems: {
@@ -15,13 +16,39 @@ export class WishlistService {
             productItem: {
               include: {
                 images: true,
-                product:true
+                product: true,
               },
             },
           },
         },
       },
     });
+
+    // If no wishlist is found, create a new wishlist for the user
+    if (!wishlist) {
+      wishlist = await this.prismaService.wishlist.create({
+        data: {
+          userId, // Associate the wishlist with the userId
+          wishlistItems: {
+            create: [], // Start with an empty wishlistItems array
+          },
+        },
+        include: {
+          wishlistItems: {
+            include: {
+              productItem: {
+                include: {
+                  images: true,
+                  product: true,
+                },
+              },
+            },
+          },
+        },
+      });
+    }
+
+    return wishlist; // Return the found or newly created wishlist
   }
 
   // Create a new wishlist for the user

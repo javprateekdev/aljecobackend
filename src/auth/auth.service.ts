@@ -76,6 +76,7 @@ export class AuthService {
   async login(userId: number, type: UserType): Promise<ValidAuthResponse> {
     const payload = { sub: userId, type: type };
     const accessToken = this.jwtService.sign(payload);
+
     return {
       accessToken,
       type,

@@ -49,7 +49,8 @@ export class CartService {
   }
 
   async getCartByUserId(userId: number) {
-    return this.prisma.cart.findFirst({
+    // Attempt to find the cart for the given userId
+    let cart = await this.prisma.cart.findFirst({
       where: { userId },
       include: {
         cartItems: {
@@ -64,6 +65,32 @@ export class CartService {
         },
       },
     });
+
+    // If no cart is found, create a new cart for the user
+    if (!cart) {
+      cart = await this.prisma.cart.create({
+        data: {
+          userId, // Associate the cart with the userId
+          cartItems: {
+            create: [], // Start with an empty cartItems array
+          },
+        },
+        include: {
+          cartItems: {
+            include: {
+              productItem: {
+                include: {
+                  product: true,
+                  images: true,
+                },
+              },
+            },
+          },
+        },
+      });
+    }
+
+    return cart; // Return the found or newly created cart
   }
 
   async deleteCartItem(cartItemId: number) {
@@ -79,7 +106,4 @@ export class CartService {
       where: { id: cartItemId },
     });
   }
- 
-  
 }
-

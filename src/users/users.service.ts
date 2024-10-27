@@ -111,6 +111,10 @@ export class UsersService {
       where: {
         id: userId,
       },
+      include: {
+        Address: true,
+        Order: true,
+      },
     });
   }
 

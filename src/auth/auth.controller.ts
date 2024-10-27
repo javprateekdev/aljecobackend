@@ -83,7 +83,7 @@ export class AuthController extends BaseController {
     value: string,
     options?: CookieOptions,
   ): void {
-    res.cookie(key, value, this.getCookieOptions(options));
+    res.cookie(key, value);
   }
 
   private removeCookie(
@@ -182,7 +182,7 @@ export class AuthController extends BaseController {
       req.user.type,
     );
     this.setAuthCookie(res, accessToken, type);
-    return { token: accessToken, type:type };
+    return { token: accessToken, type: type };
   }
 
   @UseGuards(GoogleOAuthGuard)
