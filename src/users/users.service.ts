@@ -693,4 +693,28 @@ export class UsersService {
     });
     return orders;
   }
+  
+  async findOrder(id: number) {
+    const order = await this.prisma.order.findFirst({
+      where: {
+        id: id,
+      },
+      include: {
+        orderItems: {
+          include: {
+            productItem: {
+              include:{
+                product:true
+              }
+            }, // Include details of the product item
+          },
+        },
+        Payment: true, // Include payment information
+        coupon: true, // Include coupon details, if applicable
+        deleiveryAddress: true, // Include delivery address details
+      },
+    });
+    return order;
+  }
+  
 }

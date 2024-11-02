@@ -66,6 +66,11 @@ export class UsersController extends BaseController {
     return this.usersService.findAllOrders(ctx.user.id);
   }
 
+  @Get('order/:id')
+  findAOrder(@Req()   @Param('id', ParseIntPipe) id: number) {
+    return this.usersService.findOrder(id);
+  }
+
   @Put(':id')
   updateAddress(
     @Param('userId', ParseIntPipe) userId: number,
